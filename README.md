@@ -144,8 +144,7 @@ BigDataPryFinal/
 │   ├── procesada/          # Datos transformados por Spark
 │   └── dashboard/          # Datos finales para visualización
 │
-├── notebooks/
-│   └── PipeLinePlay.ipynb  # Notebook principal del pipeline
+├── PipeLinePlay.ipynb  # Notebook principal del pipeline
 │
 ├── src/                    # Código fuente PySpark
 ├── utilities/              # Funciones utilitarias
