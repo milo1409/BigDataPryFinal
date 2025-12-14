@@ -133,9 +133,9 @@ Evita recomputaciones y mejora el rendimiento general.
 - Reducción significativa de tiempos de ejecución.
 
 ---
-
 ## 🗂️ Estructura del Proyecto
 
+```
 BigDataPryFinal/
 │
 ├── config/                 # Archivos de configuración
@@ -151,6 +151,8 @@ BigDataPryFinal/
 ├── utilities/              # Funciones utilitarias
 ├── requirements.txt        # Dependencias del proyecto
 └── README.md
+```
+
 
 
 ## 👤 Autores
