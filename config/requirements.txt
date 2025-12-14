@@ -5,13 +5,13 @@ delta-spark
 psutil
 requests
 gdown
-plotly
-dash
 ipywidgets
 geopandas
 beautifulsoup4
 XlsxWriter
 pyspark==4.0.0
 pyarrow
+plotly
 dash==2.17.0
-jupyter-dash
+jupyter-dash==0.4.2
+ipywidgets
