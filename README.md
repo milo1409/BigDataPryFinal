@@ -156,9 +156,9 @@ BigDataPryFinal/
 
 ## 👤 Autores
 
-**Oscar Clavijo**
-**Edward Daniel Porras** 
-**Camilo Andres Porras**
+- **Oscar Clavijo**
+- **Edward Daniel Porras** 
+- **Camilo Andres Porras**
 Proyecto Final – Big Data  
 Diciembre 2025
 
