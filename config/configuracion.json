@@ -1,5 +1,5 @@
 {
-    "base_path": "/content/bigDataFinalProject",
+    "base_path": "/content/BigDataPryFinal",
     "load_requirements": "config/requirements.txt",
     "data_cruda": "data/cruda",
     "data_procesada": "data/procesada",
