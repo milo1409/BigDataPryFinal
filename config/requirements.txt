@@ -1,0 +1,16 @@
+pandas
+numpy
+pyspark
+delta-spark
+psutil
+requests
+gdown
+plotly
+dash
+ipywidgets
+geopandas
+beautifulsoup4
+XlsxWriter
+pyspark==4.0.0
+pandas
+pyarrow

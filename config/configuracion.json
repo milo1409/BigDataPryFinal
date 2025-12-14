@@ -1,0 +1,10 @@
+{
+    "base_path": "/content/bigDataFinalProject",
+    "load_requirements": "config/requirements.txt",
+    "data_cruda": "data/cruda",
+    "data_procesada": "data/procesada",
+    "data_dashboard": "data/dashboard",
+    "logs": "log",
+    "data_complementaria": "data/complementaria"
+
+}
