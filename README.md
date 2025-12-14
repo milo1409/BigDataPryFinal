@@ -159,7 +159,7 @@ BigDataPryFinal/
 - **Oscar Clavijo**
 - **Edward Daniel Porras** 
 - **Camilo Andres Porras**
-Proyecto Final – Big Data  
-Diciembre 2025
+- Proyecto Final – Big Data  
+- Diciembre 2025
 
 ---
