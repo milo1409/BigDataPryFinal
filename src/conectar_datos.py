@@ -30,12 +30,12 @@ class ExtraerDatosProcesamiento:
             raise ValueError("Falta 'data_dashboard' en config")
         return self._resolve(rel)
 
+    
     def limpiar_carpetas_salida(
         self,
         limpiar_procesada: bool = True,
         limpiar_dashboard: bool = True
     ) -> Dict[str, str]:
-        
         borradas: Dict[str, str] = {}
 
         if limpiar_procesada:
@@ -56,21 +56,13 @@ class ExtraerDatosProcesamiento:
 
     
     def _pandas_to_spark_force_string(self, pdf: pd.DataFrame) -> DataFrame:
-        """
-        Convierte pandas -> Spark forzando todas las columnas a STRING.
-        Evita errores de inferencia tipo: CANNOT_MERGE_TYPE StringType vs StructType.
-        """
         pdf2 = pdf.copy()
-
-        
         pdf2 = pdf2.where(pd.notna(pdf2), None)
 
-        
         for c in pdf2.columns:
             pdf2[c] = pdf2[c].apply(lambda x: None if x is None else str(x))
 
         schema = StructType([StructField(str(c), StringType(), True) for c in pdf2.columns])
-
         records = pdf2.to_dict(orient="records")
         return self.spark.createDataFrame(records, schema=schema)
 
@@ -81,7 +73,18 @@ class ExtraerDatosProcesamiento:
             return df
         raise TypeError("df debe ser un pandas.DataFrame o un pyspark.sql.DataFrame")
 
+    
+    def _try_int(self, colname: str):
+        
+        c = F.col(colname)
+        s = F.regexp_replace(F.trim(c.cast("string")), ",", ".")
 
+        return F.when(s.rlike(r"^\d+$"), s.cast("int")) \
+                .when(s.rlike(r"^\d+\.0+$"), F.regexp_replace(s, r"\.0+$", "").cast("int")) \
+                .when(s.rlike(r"^\d+(\.\d+)?$"), s.cast("double").cast("int")) \
+                .otherwise(F.lit(None).cast("int"))
+
+    
     def _write_parquet(self, df: DataFrame, abs_out_dir: str, mode: str = "overwrite") -> str:
         df.write.mode(mode).parquet(abs_out_dir)
         return abs_out_dir
@@ -93,37 +96,37 @@ class ExtraerDatosProcesamiento:
         partition_cols: List[str],
         mode: str = "overwrite",
     ) -> str:
-        (
-            df.write
-              .mode(mode)
-              .partitionBy(*partition_cols)
-              .parquet(abs_out_dir)
-        )
+        df.write.mode(mode).partitionBy(*partition_cols).parquet(abs_out_dir)
         return abs_out_dir
 
-
+    
     def generar_parquets_dashboard_spark(
         self,
         df: Union[pd.DataFrame, DataFrame],
         mode: str = "overwrite",
         limpiar_procesada: bool = True,
         limpiar_dashboard: bool = True,
-        subdir_general: str = "incidentes",  
+        subdir_general: str = "incidentes",
     ) -> Dict[str, str]:
+
         
         self.limpiar_carpetas_salida(
             limpiar_procesada=limpiar_procesada,
             limpiar_dashboard=limpiar_dashboard,
         )
 
+        
         df_s = self._ensure_spark_df(df)
 
+        # 2) Cast mínimos (tolerantes)
         if "FECHA" in df_s.columns:
             df_s = df_s.withColumn("FECHA", F.to_date(F.col("FECHA")))
+
         if "HORA" in df_s.columns:
-            df_s = df_s.withColumn("HORA", F.col("HORA").cast("int"))
+            df_s = df_s.withColumn("HORA", self._try_int("HORA"))
+
         if "EDAD" in df_s.columns:
-            df_s = df_s.withColumn("EDAD", F.col("EDAD").cast("int"))
+            df_s = df_s.withColumn("EDAD", self._try_int("EDAD"))
 
         rutas: Dict[str, str] = {}
 
@@ -131,31 +134,16 @@ class ExtraerDatosProcesamiento:
         out_general = os.path.join(self._path_procesada(), subdir_general)
         rutas["general"] = self._write_parquet(df_s, out_general, mode=mode)
 
-   
-        df_diario = (
-            df_s.groupBy("FECHA")
-                .agg(F.count(F.lit(1)).alias("TOTAL"))
-        )
+        
+        df_diario = df_s.groupBy("FECHA").agg(F.count(F.lit(1)).alias("TOTAL"))
 
-        df_hm = (
-            df_s.groupBy("DIA_SEMANA", "HORA")
-                .agg(F.count(F.lit(1)).alias("TOTAL"))
-        )
+        df_hm = df_s.groupBy("DIA_SEMANA", "HORA").agg(F.count(F.lit(1)).alias("TOTAL"))
 
-        df_loc = (
-            df_s.groupBy("LOCALIDAD")
-                .agg(F.count(F.lit(1)).alias("TOTAL"))
-        )
+        df_loc = df_s.groupBy("LOCALIDAD").agg(F.count(F.lit(1)).alias("TOTAL"))
 
-        df_tipo = (
-            df_s.groupBy("TIPO_INCIDENTE")
-                .agg(F.count(F.lit(1)).alias("TOTAL"))
-        )
+        df_tipo = df_s.groupBy("TIPO_INCIDENTE").agg(F.count(F.lit(1)).alias("TOTAL"))
 
-        df_sb = (
-            df_s.groupBy("PRIORIDAD_FINAL", "TIPO_INCIDENTE")
-                .agg(F.count(F.lit(1)).alias("TOTAL"))
-        )
+        df_sb = df_s.groupBy("PRIORIDAD_FINAL", "TIPO_INCIDENTE").agg(F.count(F.lit(1)).alias("TOTAL"))
 
         
         dash_root = self._path_dashboard()
