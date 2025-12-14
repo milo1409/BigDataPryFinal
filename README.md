@@ -11,10 +11,10 @@ El proyecto demuestra buenas prácticas de **ingeniería de datos**, **optimizac
 
 ## 🎯 Objetivo del Proyecto
 
-- Procesar hasta **24 meses de datos históricos** sin errores de memoria.
+- Procesar hasta **36 meses de datos históricos** sin errores de memoria.
 - Construir un pipeline escalable usando Spark.
 - Aplicar optimizaciones reales (broadcast, particionamiento, cache).
-- Validar la ejecución tanto en **Google Colab** como en **Databricks**.
+- Validar la ejecución en **Google Colab**.
 - Generar datasets optimizados para visualización.
 
 ---
@@ -55,9 +55,14 @@ El pipeline ejecuta:
 1. Importar el notebook `PipeLinePlay.ipynb` al Workspace de Databricks.
 2. Adjuntar un **cluster activo**.
 3. Ejecutar el pipeline completo.
-4. Capturar evidencia visual de la ejecución exitosa.
+4. Capturar evidencia visual de la ejecución exitosa en Databricks.
 
-Este paso valida la **portabilidad del pipeline a un entorno empresarial**.
+<img width="1913" height="496" alt="image" src="https://github.com/user-attachments/assets/0cb8ab1a-2b13-4782-822e-0f7fc715e9c9" />
+
+<img width="1271" height="699" alt="image" src="https://github.com/user-attachments/assets/3c829228-23c8-4cb9-87b5-2f2656bdc083" />
+
+<img width="1297" height="691" alt="image" src="https://github.com/user-attachments/assets/69a0e581-0a3f-4702-b930-a3d0c941a7e7" />
+
 
 ---
 
@@ -82,7 +87,7 @@ Dependencias principales:
 
 ### 🔹 Uso de Broadcast Join
 
-Se utilizó `broadcast()` para joins entre datasets grandes y pequeños, evitando operaciones costosas de shuffle y reduciendo tiempos de ejecución.
+Se utilizó `broadcast()` para joins entre datasets grandes y pequeños Geocodificar las localidades, evitando operaciones costosas de shuffle y reduciendo tiempos de ejecución.
 
 ```python
 from pyspark.sql.functions import broadcast
@@ -120,47 +125,38 @@ Evita recomputaciones y mejora el rendimiento general.
 
 ---
 
-### 🔹 Ajustes de Configuración Spark
-
-```python
-spark.conf.set("spark.sql.shuffle.partitions", "200")
-```
-
----
-
 ## 📈 Resultados Obtenidos
 
-- Procesamiento exitoso de **24 meses de datos históricos**.
+- Procesamiento exitoso de **36 meses de datos históricos**.
 - Ejecución estable en Google Colab.
-- Validación exitosa en Databricks Community Edition.
+- Validación en Databricks.
 - Reducción significativa de tiempos de ejecución.
 
 ---
 
 ## 🗂️ Estructura del Proyecto
 
-```
 BigDataPryFinal/
 │
-├── config/
+├── config/                 # Archivos de configuración
 ├── data/
-├── notebooks/
-│   └── PipeLinePlay.ipynb
-├── src/
-├── requirements.txt
+│   ├── cruda/              # Datos originales descargados
+│   ├── procesada/          # Datos transformados por Spark
+│   └── dashboard/          # Datos finales para visualización
+│
+├── PipeLinePlay.ipynb  # Notebook principal del pipeline
+│
+├── src/                    # Código fuente PySpark
+├── utilities/              # Funciones utilitarias
+├── requirements.txt        # Dependencias del proyecto
 └── README.md
-```
 
----
+## 👤 Autores
 
-## 👤 Autor
-
-**Andrés Porras**  
+**Oscar Clavijo**
+**Edward Daniel Porras** 
+**Camilo Andres Porras**
 Proyecto Final – Big Data  
 Diciembre 2025
 
 ---
-
-## 📝 Notas Finales
-
-Este proyecto demuestra un enfoque profesional de ingeniería de datos, aplicando optimizaciones reales de Apache Spark y validando su ejecución en entornos académicos y empresariales.
