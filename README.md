@@ -3,7 +3,7 @@
 ## 📊 Proyecto Final Big Data – Pipeline End-to-End con PySpark
 
 Este proyecto implementa un **pipeline integral de Big Data** que cubre las fases de **ingesta, procesamiento optimizado y visualización**, utilizando **Apache Spark (PySpark)** como motor principal.  
-El caso de estudio corresponde al análisis de datos históricos de emergencias (Línea 123), procesando grandes volúmenes de información de manera eficiente y escalable.
+El caso de estudio corresponde al análisis de datos históricos de emergencias (Línea 123), procesando grandes volúmenes de información de manera eficiente y escalable para este caso fueron 36 MESES.
 
 El desarrollo está orientado a demostrar **buenas prácticas de optimización en Spark**, garantizando ejecución sin errores de memoria incluso con datasets de múltiples meses.
 
