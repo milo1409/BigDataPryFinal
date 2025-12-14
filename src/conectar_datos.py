@@ -2,11 +2,14 @@ import os
 import shutil
 from typing import Dict, List, Union
 import pandas as pd
+
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
+from pyspark.sql.types import StructType, StructField, StringType
 
 
 class ExtraerDatosProcesamiento:
+    
     def __init__(self, spark: SparkSession, utils, config: dict):
         self.spark = spark
         self.Utils = utils
@@ -27,9 +30,13 @@ class ExtraerDatosProcesamiento:
             raise ValueError("Falta 'data_dashboard' en config")
         return self._resolve(rel)
 
-    def limpiar_carpetas_salida(self, limpiar_procesada: bool = True, limpiar_dashboard: bool = True) -> Dict[str, str]:
+    def limpiar_carpetas_salida(
+        self,
+        limpiar_procesada: bool = True,
+        limpiar_dashboard: bool = True
+    ) -> Dict[str, str]:
         
-        borradas = {}
+        borradas: Dict[str, str] = {}
 
         if limpiar_procesada:
             p = self._path_procesada()
@@ -47,6 +54,34 @@ class ExtraerDatosProcesamiento:
 
         return borradas
 
+    
+    def _pandas_to_spark_force_string(self, pdf: pd.DataFrame) -> DataFrame:
+        """
+        Convierte pandas -> Spark forzando todas las columnas a STRING.
+        Evita errores de inferencia tipo: CANNOT_MERGE_TYPE StringType vs StructType.
+        """
+        pdf2 = pdf.copy()
+
+        
+        pdf2 = pdf2.where(pd.notna(pdf2), None)
+
+        
+        for c in pdf2.columns:
+            pdf2[c] = pdf2[c].apply(lambda x: None if x is None else str(x))
+
+        schema = StructType([StructField(str(c), StringType(), True) for c in pdf2.columns])
+
+        records = pdf2.to_dict(orient="records")
+        return self.spark.createDataFrame(records, schema=schema)
+
+    def _ensure_spark_df(self, df: Union[pd.DataFrame, DataFrame]) -> DataFrame:
+        if isinstance(df, pd.DataFrame):
+            return self._pandas_to_spark_force_string(df)
+        if isinstance(df, DataFrame):
+            return df
+        raise TypeError("df debe ser un pandas.DataFrame o un pyspark.sql.DataFrame")
+
+
     def _write_parquet(self, df: DataFrame, abs_out_dir: str, mode: str = "overwrite") -> str:
         df.write.mode(mode).parquet(abs_out_dir)
         return abs_out_dir
@@ -56,7 +91,7 @@ class ExtraerDatosProcesamiento:
         df: DataFrame,
         abs_out_dir: str,
         partition_cols: List[str],
-        mode: str = "overwrite"
+        mode: str = "overwrite",
     ) -> str:
         (
             df.write
@@ -66,53 +101,63 @@ class ExtraerDatosProcesamiento:
         )
         return abs_out_dir
 
+
     def generar_parquets_dashboard_spark(
         self,
         df: Union[pd.DataFrame, DataFrame],
         mode: str = "overwrite",
         limpiar_procesada: bool = True,
         limpiar_dashboard: bool = True,
-        subdir_general: str = "incidentes",
-    ) -> Dict[str, str]:      
-
-        # 0) Limpiar carpetas (recomendado para evitar conflictos)
+        subdir_general: str = "incidentes",  
+    ) -> Dict[str, str]:
+        
         self.limpiar_carpetas_salida(
             limpiar_procesada=limpiar_procesada,
-            limpiar_dashboard=limpiar_dashboard
+            limpiar_dashboard=limpiar_dashboard,
         )
 
-        # 1) Asegurar Spark DF
-        if isinstance(df, pd.DataFrame):
-            df_s = self.spark.createDataFrame(df)
-        elif isinstance(df, DataFrame):
-            df_s = df
-        else:
-            raise TypeError("df debe ser un pandas.DataFrame o un pyspark.sql.DataFrame")
+        df_s = self._ensure_spark_df(df)
+
+        if "FECHA" in df_s.columns:
+            df_s = df_s.withColumn("FECHA", F.to_date(F.col("FECHA")))
+        if "HORA" in df_s.columns:
+            df_s = df_s.withColumn("HORA", F.col("HORA").cast("int"))
+        if "EDAD" in df_s.columns:
+            df_s = df_s.withColumn("EDAD", F.col("EDAD").cast("int"))
 
         rutas: Dict[str, str] = {}
 
-        # 2) Guardar parquet general (SIN partición) en procesada/incidentes
+        
         out_general = os.path.join(self._path_procesada(), subdir_general)
         rutas["general"] = self._write_parquet(df_s, out_general, mode=mode)
 
-        # 3) Agregados Spark
-        df_diario = df_s.groupBy("FECHA").agg(F.count(F.lit(1)).alias("TOTAL"))
+   
+        df_diario = (
+            df_s.groupBy("FECHA")
+                .agg(F.count(F.lit(1)).alias("TOTAL"))
+        )
 
         df_hm = (
             df_s.groupBy("DIA_SEMANA", "HORA")
                 .agg(F.count(F.lit(1)).alias("TOTAL"))
         )
 
-        df_loc = df_s.groupBy("LOCALIDAD").agg(F.count(F.lit(1)).alias("TOTAL"))
+        df_loc = (
+            df_s.groupBy("LOCALIDAD")
+                .agg(F.count(F.lit(1)).alias("TOTAL"))
+        )
 
-        df_tipo = df_s.groupBy("TIPO_INCIDENTE").agg(F.count(F.lit(1)).alias("TOTAL"))
+        df_tipo = (
+            df_s.groupBy("TIPO_INCIDENTE")
+                .agg(F.count(F.lit(1)).alias("TOTAL"))
+        )
 
         df_sb = (
             df_s.groupBy("PRIORIDAD_FINAL", "TIPO_INCIDENTE")
                 .agg(F.count(F.lit(1)).alias("TOTAL"))
         )
 
-        # 4) Guardar agregados en data/dashboard (FUERA de procesada)
+        
         dash_root = self._path_dashboard()
 
         rutas["diario"] = self._write_partitioned_parquet(
