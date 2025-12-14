@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import re
 import numpy as np
+from utilities import Utils
 
 
 class DataLoader123:
@@ -103,6 +104,7 @@ class DataLoader123:
         return df
 
     @staticmethod
+    @Utils.perf_logger(base_path=os.getenv("BASE_PATH", ""), name="procesar_todos_csv_crudos")
     def procesar_todos_csv_crudos(config: Dict[str, str]) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
         folder_base = config["base_path"]
@@ -141,6 +143,7 @@ class DataLoader123:
         return df_total, df_inconsistencias_total
 
     @staticmethod
+    @Utils.perf_logger(base_path=os.getenv("BASE_PATH", ""), name="estandarizacion_columnas")
     def estandarizacion_columnas(df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
 

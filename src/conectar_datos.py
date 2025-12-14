@@ -6,6 +6,7 @@ import pandas as pd
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.types import StructType, StructField, StringType
+from utilities import Utils
 
 
 class ExtraerDatosProcesamiento:
@@ -99,7 +100,7 @@ class ExtraerDatosProcesamiento:
         df.write.mode(mode).partitionBy(*partition_cols).parquet(abs_out_dir)
         return abs_out_dir
 
-    
+    @Utils.perf_logger(base_path=os.getenv("BASE_PATH", ""), name="generar_parquets_dashboard_spark")
     def generar_parquets_dashboard_spark(
         self,
         df: Union[pd.DataFrame, DataFrame],
@@ -118,7 +119,6 @@ class ExtraerDatosProcesamiento:
         
         df_s = self._ensure_spark_df(df)
 
-        # 2) Cast mínimos (tolerantes)
         if "FECHA" in df_s.columns:
             df_s = df_s.withColumn("FECHA", F.to_date(F.col("FECHA")))
 

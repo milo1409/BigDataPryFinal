@@ -3,6 +3,7 @@ from typing import Optional
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.functions import broadcast
+from utilities import Utils
 
 
 class LocalidadesJoinSpark:
@@ -56,7 +57,8 @@ class LocalidadesJoinSpark:
         loc = loc.select("Codigo_Localidad", "X", "Y")
 
         return loc
-
+    
+    @Utils.perf_logger(base_path=os.getenv("BASE_PATH", ""), name="construir_df_agg_mapa")
     def construir_df_agg_mapa(
         self,
         df_incidentes: DataFrame,
